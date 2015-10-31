@@ -1,0 +1,66 @@
+# $Id$
+# Maintainer: Nicolas Cisco <ncis20@gmail.com>
+# Contributor: Ido Rosen <ido@kernel.org>
+#
+# NOTE: To request changes to this package, please submit a pull request
+#       to the GitHub repository at https://github.com/nickcis/packages-archlinux
+#       Otherwise, open a GitHub issue.
+#       This package was inspired in Ido's docker-git package <https://github.com/ido/packages-archlinux>
+#
+
+pkgname=docker-i686
+pkgver=1.7.1
+pkgrel=1
+pkgdesc='Pack, ship and run any application as a lightweight container. This is the last docker version found to be working on i686 systems'
+arch=('i686')
+url="https://github.com/docker/docker"
+license=('Apache')
+depends=('bridge-utils' 'iproute2' 'device-mapper' 'sqlite' 'systemd')
+makedepends=('git' 'go-docker' 'btrfs-progs' 'go-md2man')
+backup=(etc/sysctl.d/docker.conf)
+provides=('docker')
+conflicts=('docker')
+# don't strip binaries! A sha1 is used to check binary consistency.
+options=('!strip')
+source=("git+https://github.com/docker/docker.git#tag=v$pkgver"
+        'docker.service'
+        'docker.install'
+        docker.conf
+        )
+md5sums=('SKIP'
+         'faf808e8e995479d8e1849b7413167dd'
+         '1a8e60447794b3c4f87a2272cc9f144f'
+         '9bce988683771fb8262197f2d8196202')
+install='docker.install'
+
+build() {
+  cd docker
+  export AUTO_GOPATH=1
+  alias go=/usr/lib/go-docker/bin/go
+  export PATH="/usr/lib/go-docker/bin:$PATH"
+  ./hack/make.sh dynbinary
+  for i in man/*.md; do
+    go-md2man -in "$i" -out "${i%.md}"
+  done
+}
+
+package() {
+  cd docker
+  install -Dm755 "bundles/$pkgver/dynbinary/docker-$pkgver" "$pkgdir/usr/bin/docker"
+  install -Dm755 "bundles/$pkgver/dynbinary/dockerinit-$pkgver" "$pkgdir/usr/lib/docker/dockerinit"
+  # completion
+  install -Dm644 "contrib/completion/bash/docker" "$pkgdir/usr/share/bash-completion/completions/docker"
+  install -Dm644 "contrib/completion/zsh/_docker" "$pkgdir/usr/share/zsh/site-functions/_docker"
+  # systemd
+  install -Dm644 "$srcdir/docker.service" "$pkgdir/usr/lib/systemd/system/docker.service"
+  install -Dm644 "$srcdir/docker.conf" "$pkgdir/etc/sysctl.d/docker.conf"
+
+  cd man
+  for section in 1 5; do
+    for i in *.$section; do
+      install -Dm644 "$i" "$pkgdir/usr/share/man/man$section/$i"
+    done
+  done
+}
+
+# vim:set ts=2 sw=2 et:
