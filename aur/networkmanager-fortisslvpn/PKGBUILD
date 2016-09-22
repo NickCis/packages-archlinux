@@ -1,0 +1,30 @@
+# Maintainer: Nicolas Cisco <ncis20@gmail.com>
+
+pkgname=networkmanager-fortisslvpn
+pkgver=1.2.2
+pkgrel=1
+pkgdesc='NetworkManager VPN plugin for Forti SSL VPN'
+arch=('i686' 'x86_64')
+license=('GPLv2')
+url='http://www.gnome.org/projects/NetworkManager/'
+depends=('networkmanager' 'openfortivpn')
+makedepends=('unzip' 'intltool')
+source=("https://git.gnome.org/browse/network-manager-fortisslvpn/snapshot/network-manager-fortisslvpn-$pkgver.zip")
+sha256sums=('SKIP')
+
+build() {
+	cd network-manager-fortisslvpn-$pkgver
+	./autogen.sh
+	./configure --prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--libexecdir=/usr/lib/networkmanager \
+		--enable-more-warnings=yes \
+		--disable-static
+	make
+}
+
+package() {
+	cd network-manager-fortisslvpn-$pkgver
+	make DESTDIR="${pkgdir}" install
+}
